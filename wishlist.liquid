@@ -1,0 +1,382 @@
+{% comment %} WishList Section {% endcomment %}
+<script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+<section>
+    <div class="page-width">
+        <div class="wishlist-content">
+        <h1 class="main-page-title page-title h0">
+            WishList
+        </h1>
+        <div class="wish-list-product-btn hidden">
+            <button class="remove_all_from_wishlist button button--full-width button--secondary">
+              <span>Clear All</span>
+              <div class="loading-overlay__spinner hidden">
+                <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                </svg>
+              </div>
+            </button>
+            <button class="add_all_to_cart button button--full-width button--primary">
+              <span>Add All To Cart</span>
+              <div class="loading-overlay__spinner hidden">
+                <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                </svg>
+              </div>
+            </button> 
+        </div>
+        <div class="wishlist-main-products">
+            <ul class="wishlist-product-grid grid product-grid contains-card contains-card--product contains-card--standard grid--4-col-desktop grid--2-col-tablet-down">
+                
+            </ul>
+        </div>
+    </div>
+</section>
+
+{% schema %}
+  {
+    "name": "WishList",
+    "settings": [
+],
+"presets": [
+      {
+        "name": "WishList",
+        "category": "Product"
+      }
+    ]
+  }
+{% endschema %}
+
+{% stylesheet %}
+{% endstylesheet %}
+
+{% comment %} WishList JS {% endcomment %}
+<script>
+$(document).ready(function(){
+  // Check if LocalStorage is define
+  let whishListIcon = $('.wishlist-icon');
+  let whishList_handles = [];
+  let whishlistFound = localStorage.getItem('WishList');
+  if(whishlistFound != null){
+    localStorage.setItem("WishList",whishlistFound);
+    whishList_handles = JSON.parse(whishlistFound);
+  }
+  else{
+    whishList_handles = [];
+  }
+  // Adding Product to WishList
+  for(item of whishListIcon){
+    item.addEventListener('click',(event)=>{   
+      let inList = whishList_handles.indexOf(event.target.closest('.collection_item').getAttribute('data-product-handle'));
+      if(inList === -1){
+        whishList_handles.push(event.target.closest('.collection_item').getAttribute('data-product-handle'));
+        localStorage.setItem("WishList",JSON.stringify(whishList_handles));
+        event.target.closest('.collection_item').querySelector('.wishlist-icon').classList.add("added-to-wishlist");
+        CountWishListProduct();
+      }else{
+        let index = whishList_handles.indexOf(event.target.closest('.collection_item').getAttribute('data-product-handle'));
+        whishList_handles.splice(index, 1);
+        localStorage.setItem("WishList",JSON.stringify(whishList_handles));
+        event.target.closest('.collection_item').querySelector('.wishlist-icon').classList.remove("added-to-wishlist");
+        CountWishListProduct();
+      }
+    });
+  }
+  // Check Product in WishList or Not When load
+  let whishList = localStorage.getItem('WishList');
+  let jsonWhishlist = JSON.stringify(whishList);
+  $('.collection_item').each(function(){
+      let productHandle = $(this).attr('data-product-handle');
+      if (jsonWhishlist.includes(productHandle)){
+        $(this).find('.wishlist-icon').addClass('added-to-wishlist');
+      }
+  });
+  // Function For Count WishList Product
+  CountWishListProduct();
+  function CountWishListProduct(){
+    let checklist = localStorage.getItem('WishList');
+    if(checklist != null){
+        let CounProduct = 0;
+        for(product of JSON.parse(checklist)){ 
+          CounProduct = CounProduct + 1; 
+        }
+        if(CounProduct > 0)
+        {
+          $('.wishlist-count-bubble').show();
+          $('.wishlist-count-bubble span').html(CounProduct);
+          $('.wish-list-product-btn').removeClass('hidden');
+        }else{
+          $('.wishlist-count-bubble').hide();
+          $('.wish-list-product-btn').addClass('hidden');
+        }
+    }else{
+      $('.wishlist-count-bubble').hide();
+      $('.wish-list-product-btn').addClass('hidden');
+    }
+  }
+  // Print Product in Wishlist Page 
+  let checklist = localStorage.getItem('WishList');
+  if(checklist != null){
+      let ListItem = JSON.parse(checklist);
+      for(product of ListItem){
+          jQuery.getJSON(window.Shopify.routes.root + 'products/'+product+'.js', function(product) {
+              let WishListItems = `<li class="grid__item grid__item_relative collection_item" data-product-handle="${product.handle}">
+                <div class="wishlist-product-image">
+                  <a class="" href="${product.url}">
+                    <img class="wishlist_product_image" src="${product.featured_image}" alt="${product.handle}" loading="lazy">
+                  </a>
+                </div>
+                <div class="wishlist-card__information">
+                  <div class="wishlist-product-title">
+                    <a href="${product.url}" class="full-unstyled-link">${product.title}</a>
+                  </div>
+                  <div class="wishlist-product-price">
+                    <div class="price__sale_">
+                      <s class="price-item price-item--regular">
+                        ${Shopify.formatMoney(product.compare_at_price, "${{amount}}")}
+                      </s>
+                      <span class="price-item price-item--sale price-item--last">
+                        &nbsp;&nbsp;${Shopify.formatMoney(product.price, "${{amount}}")} 
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="wishlist-product-add-to-cart">
+                  <button type="button" class="wishlist_product_remove button button--secondary">
+                    <span>
+                      <svg height="20px" width="20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true" focusable="false" class="icon icon-remove">
+                        <path d="M14 3h-3.53a3.07 3.07 0 00-.6-1.65C9.44.82 8.8.5 8 .5s-1.44.32-1.87.85A3.06 3.06 0 005.53 3H2a.5.5 0 000 1h1.25v10c0 .28.22.5.5.5h8.5a.5.5 0 00.5-.5V4H14a.5.5 0 000-1zM6.91 1.98c.23-.29.58-.48 1.09-.48s.85.19 1.09.48c.2.24.3.6.36 1.02h-2.9c.05-.42.17-.78.36-1.02zm4.84 11.52h-7.5V4h7.5v9.5z" fill="currentColor"></path>
+                        <path d="M6.55 5.25a.5.5 0 00-.5.5v6a.5.5 0 001 0v-6a.5.5 0 00-.5-.5zM9.45 5.25a.5.5 0 00-.5.5v6a.5.5 0 001 0v-6a.5.5 0 00-.5-.5z" fill="currentColor"></path>
+                      </svg>
+                    </span>
+                    <div class="loading-overlay__spinner hidden">
+                      <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                        <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                      </svg>
+                    </div>
+                  </button>
+                  <product-form class="product-form" data-hide-errors="">
+                    <div class="product-form__error-message-wrapper" role="alert" hidden="">
+                      <span class="product-form__error-message"></span>
+                    </div>
+                    <form method="post" action="/cart/add" accept-charset="UTF-8" class="form" enctype="multipart/form-data" novalidate="novalidate" data-type="add-to-cart-form"><input type="hidden" name="form_type" value="product">
+                    <input type="hidden" name="utf8" value="✓">
+                    <input type="hidden" name="id" value="${product.variants[0].id}" class="wishlist-product-id">
+                      <button id="ProductSubmitButton-template--18832536142145__featured_collection" type="submit" name="add" class="product-form__submit button button--full-width button--primary" aria-haspopup="dialog">
+                        <span>Add to cart
+                        </span>
+                        <div class="loading-overlay__spinner hidden">
+                          <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                            <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                          </svg>
+                        </div>
+                      </button>
+                    </form>
+                  </product-form>
+                </div>
+              </li>`;
+              $('.wishlist-main-products .wishlist-product-grid').append(WishListItems);
+          });  
+      }
+  }
+  // Remove from WishList from WishList page
+  $(document).on('click','.wishlist_product_remove', function(){
+    $(this).addClass('loading');
+    $(this).find('.loading-overlay__spinner').removeClass('hidden');
+    let __this = $(this);
+    setTimeout(function(){
+      let productHandle = __this.closest('.collection_item').attr("data-product-handle");
+      let whishlistStrigify = localStorage.getItem('WishList');
+      let jsonwishList = JSON.parse(whishlistStrigify);
+      let index = jsonwishList.indexOf(productHandle);
+      if (index !== -1) jsonwishList.splice(index, 1);
+      if (index !== -1) __this.closest('.collection_item').remove();
+      localStorage.setItem("WishList",JSON.stringify(jsonwishList));
+      CountWishListProduct();
+      $('.wishlist_product_remove').removeClass('loading');
+      $('.wishlist_product_remove').find('.loading-overlay__spinner').addClass('hidden');
+    },1000);
+  });
+  // Remove All Product from Wishlist
+  $(document).on('click','.remove_all_from_wishlist', function(){
+    $(this).addClass('loading');
+    $(this).find('.loading-overlay__spinner').removeClass('hidden');
+    setTimeout(function(){
+      localStorage.removeItem('WishList');
+      $('.wishlist-product-grid .collection_item').remove();
+      CountWishListProduct();
+      $('.remove_all_from_wishlist').removeClass('loading');
+      $('.remove_all_from_wishlist').find('.loading-overlay__spinner').addClass('hidden');
+    },1000);
+  });
+  
+  // Add All WishList Product To Cart
+  $(document).on("click",".add_all_to_cart",function(e){
+    e.preventDefault();
+    $(this).addClass('loading');
+    $(this).find('.loading-overlay__spinner').removeClass('hidden');
+    let WishlistProducts = [];
+    $('.wishlist-product-grid .collection_item').each(function(){
+        var variant_id = $(this).find('product-form .wishlist-product-id').val();
+        var ProductDATA = {
+    	    id: parseInt(variant_id),
+    	    quantity: parseInt(1)
+  	    }
+        WishlistProducts.push(ProductDATA);
+    }); 
+    let formData = {items:WishlistProducts};
+      fetch(window.Shopify.routes.root + 'cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => {
+        // localStorage.removeItem('WishList');
+        // $('.wishlist-product-grid .collection_item').remove();
+        // window.location.href = "/cart";
+        mincart();
+        setTimeout(function(){
+          var cartIcon = document.querySelector('.header__icon--cart');
+          var clickEvent = new Event('click');
+          cartIcon.dispatchEvent(clickEvent);
+        },500);
+        $('.add_all_to_cart').removeClass('loading');
+        $('.add_all_to_cart').find('.loading-overlay__spinner').addClass('hidden');
+        return response.json();
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  });
+});
+</script>
+
+{% comment %} WishList CSS {% endcomment %}
+<style>
+    /* Wishlist Css */
+.wishlist-icon {
+  position: absolute;
+  top: 34px;
+  right: 5px;
+  z-index: 9;
+  cursor: pointer;
+  transition: all .5s ease;
+  height: 20px;
+  width: 23px;
+}
+.wishlist-icon path{
+  fill: #fff;
+  stroke: #000;
+}
+.wishlist-icon:hover {
+  transform: scale(1.2);
+}
+.wishlist-icon:hover path{
+  fill: #ff0000;
+  stroke: #ff0000;
+}
+.added-to-wishlist path {
+  fill: #ff0000;
+  stroke: #ff0000;
+}
+.wishlist-content {
+  text-align: center;
+}
+.wish-list-product-btn {
+  display: flex;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.wish-list-product-btn .button--secondary {
+  margin-right: 10px;
+}
+.wishlist-page{
+  position: relative;
+}
+.wishlist-count-bubble {
+  position: absolute;
+  background-color: rgb(var(--color-button));
+  color: rgb(var(--color-button-text));
+  height: 1.7rem;
+  width: 1.7rem;
+  border-radius: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.9rem;
+  bottom: 0.8rem;
+  left: 2.2rem;
+  line-height: calc(1 + 0.1 / var(--font-body-scale));
+}
+.wishlist-product-grid {
+  row-gap: 2.5rem;
+  margin-top: 2.5rem;
+}
+.wishlist_product_image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.wishlist-product-grid {
+  text-align: left;
+}
+.wishlist-card__information{
+  padding-bottom: 1rem;
+  padding-top: 1.7rem;
+}
+.wishlist-product-add-to-cart {
+  display: flex;
+  flex-wrap: nowrap;
+}
+.wishlist_product_remove {
+  min-width: inherit;
+  margin-right: 5px;
+  padding: 0 2.2rem;
+}
+.wishlist-product-add-to-cart product-form {
+  width: 100%;
+}
+@media (max-width: 480px){
+  .button--full-width {
+    padding: 0 1rem;
+    font-size: 14px;
+  }
+  .wishlist_product_remove {
+    padding: 0 1rem;
+  }
+  .wishlist_product_remove .icon-remove{
+    width: 17px;
+    height: 17px;
+  }
+}
+@media (max-width: 360px){
+  .wishlist-product-add-to-cart {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .wishlist_product_remove {
+    padding: 0 1.5rem;
+    margin-bottom: 5px;
+  }
+}
+</style>
+
+{% comment %} For WishList Icon {% endcomment %}
+<svg
+  class="wishlist-icon"
+  width="23px"
+  height="20px"
+  version="1.1"
+  id="Capa_1"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  x="0px"
+  y="0px"
+  viewBox="0 0 13.066 13.066"
+  style="enable-background:new 0 0 13.066 13.066;"
+  xml:space="preserve">
+  <path d="M6.555,12.558c-0.098,0-0.195-0.034-0.273-0.103c-0.233-0.2-5.718-4.954-6.199-7.885C-0.133,3.243,0.071,2.201,0.69,1.474C1.22,0.85,2.034,0.507,2.982,0.507c0.082,0,0.165,0.002,0.247,0.008c0.058-0.003,0.115-0.004,0.172-0.004c1.048,0,2.343,0.461,3.109,2.421c0.43-1.196,1.311-2.417,3.328-2.417c1.135,0,2.023,0.342,2.571,0.987c0.597,0.701,0.787,1.733,0.569,3.068c-0.479,2.929-5.918,7.684-6.149,7.884C6.751,12.524,6.653,12.558,6.555,12.558z" />
+</svg>
+
+{% comment %} For Header Icon {% endcomment %}
