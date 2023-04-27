@@ -52,9 +52,9 @@
 {% comment %} WishList JS {% endcomment %}
 <script>
 $(document).ready(function(){
-  // Check if LocalStorage is define
+   // Check if LocalStorage is define
   let whishListIcon = $('.wishlist-icon');
-  let whishList_handles = [];
+  // let whishList_handles = [];
   let whishlistFound = localStorage.getItem('WishList');
   if(whishlistFound != null){
     localStorage.setItem("WishList",whishlistFound);
@@ -273,6 +273,22 @@ $(document).ready(function(){
         $('.product_page_add_to_wishlist_button').removeClass('added-to-wishlist');
         CountWishListProduct();
       }
+      // To check product in wishlist in collection level
+      setTimeout(function(){
+        let whishList = localStorage.getItem('WishList');
+        let jsonWhishlist = JSON.stringify(whishList);
+        $('.collection_item').each(function(){
+          let productHandle = $(this).attr('data-product-handle');
+          console.log(productHandle);
+          if (jsonWhishlist.includes(productHandle)){
+            $(this).find('.wishlist-icon').addClass('added-to-wishlist');
+            console.log('added');
+          }else{
+            $(this).find('.wishlist-icon').removeClass('added-to-wishlist');
+            console.log('remoeved');
+          }
+        });
+      },500);
   });
   // Check Product In WishList or Not In Product Page Load
   let ProductHandle = $('.product_page_add_to_wishlist_button').attr('data-product-handle');
@@ -459,3 +475,13 @@ $(document).ready(function(){
 
 {% comment %} Some of Important Class for Collection level {% endcomment %}
 <li class="grid__item grid__item_relative collection_item" data-product-handle="{{ product.handle }}"></li>
+
+{% comment %} Add Some of the code to theme quick view in success function {% endcomment %}
+<script>
+  let whishList = localStorage.getItem('WishList');
+  let jsonWhishlist = JSON.stringify(whishList);
+  let ProductHandle = $('.product_page_add_to_wishlist_button').attr('data-product-handle');
+    if (jsonWhishlist.includes(ProductHandle)){
+      $('.product_page_add_to_wishlist_button').addClass('added-to-wishlist');
+    }
+</script>
